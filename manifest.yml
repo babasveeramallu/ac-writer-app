@@ -27,8 +27,8 @@ modules:
         When a user asks you to generate acceptance criteria, use the generate-criteria action.
         Present the criteria clearly and offer to regenerate if needed.
       conversationStarters:
-        - text: Generate acceptance criteria for this ticket
-        - text: Create Gherkin scenarios with edge cases
+        - Generate acceptance criteria for this ticket
+        - Create Gherkin scenarios with edge cases
       actions:
         - generate-criteria
 

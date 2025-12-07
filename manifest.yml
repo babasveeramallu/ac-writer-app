@@ -16,6 +16,16 @@ modules:
     - key: resolver
       handler: index.handler
 
+  rovo:agent:
+    - key: ac-generator-agent
+      name: Acceptance Criteria Generator
+      description: Expert Business Analyst that generates Gherkin-format acceptance criteria
+      prompt: |
+        You are an expert Business Analyst specializing in writing Gherkin acceptance criteria.
+        Generate 2-4 scenarios with Given/When/Then format including happy path and edge cases.
+      conversationStarters:
+        - text: Generate acceptance criteria for this ticket
+
 resources:
   - key: main
     path: src/frontend
@@ -25,3 +35,4 @@ permissions:
     - read:jira-work
     - write:jira-work
     - storage:app
+    - read:rovo:agent

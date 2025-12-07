@@ -15,16 +15,35 @@ modules:
   function:
     - key: resolver
       handler: index.handler
+    - key: generateCriteriaAction
+      handler: index.generateCriteriaForRovo
 
   rovo:agent:
-    - key: ac-generator-agent
-      name: Acceptance Criteria Generator
-      description: Expert Business Analyst that generates Gherkin-format acceptance criteria
+    - key: ac-writer-agent
+      name: AC Writer Assistant
+      description: Generates Gherkin-format acceptance criteria for Jira tickets
       prompt: |
-        You are an expert Business Analyst specializing in writing Gherkin acceptance criteria.
-        Generate 2-4 scenarios with Given/When/Then format including happy path and edge cases.
+        You are an expert Business Analyst specializing in writing clear, testable acceptance criteria in Gherkin format.
+        When a user asks you to generate acceptance criteria, use the generate-criteria action.
+        Present the criteria clearly and offer to regenerate if needed.
       conversationStarters:
         - text: Generate acceptance criteria for this ticket
+        - text: Create Gherkin scenarios with edge cases
+      actions:
+        - generate-criteria
+
+  action:
+    - key: generate-criteria
+      name: Generate Acceptance Criteria
+      function: generateCriteriaAction
+      description: Generates Gherkin-format acceptance criteria based on ticket information
+      inputs:
+        template:
+          title: Template
+          type: string
+          description: Template to use (auto, Login/Authentication, CRUD Operations, Payment Processing, Search & Filter, Form Validation)
+          required: false
+      actionVerb: GET
 
 resources:
   - key: main

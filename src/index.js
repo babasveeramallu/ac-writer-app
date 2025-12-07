@@ -331,3 +331,57 @@ resolver.define('saveTemplate', async (req) => {
 });
 
 export const handler = resolver.getDefinitions();
+
+export async function generateCriteriaForRovo(payload, context) {
+  try {
+    console.log('Rovo action called with payload:', payload);
+    
+    const issueKey = context?.jira?.issueKey;
+    
+    if (!issueKey) {
+      return {
+        success: false,
+        error: 'No Jira issue context found. Please use this action from a Jira issue page.'
+      };
+    }
+    
+    const response = await api.asApp().requestJira(route`/rest/api/3/issue/${issueKey}`);
+    
+    if (!response.ok) {
+      return {
+        success: false,
+        error: `Failed to fetch issue: HTTP ${response.status}`
+      };
+    }
+    
+    const data = await response.json();
+    const summary = data.fields.summary;
+    const description = data.fields.description?.content?.[0]?.content?.[0]?.text || '';
+    const issueType = data.fields.issuetype.name;
+    
+    const template = payload?.template || 'auto';
+    
+    if (template !== 'auto' && TEMPLATES[template]) {
+      return {
+        success: true,
+        criteria: TEMPLATES[template],
+        message: `Generated acceptance criteria using ${template} template for ${issueKey}`
+      };
+    }
+    
+    const criteria = generateGherkinCriteria(summary, description, issueType);
+    
+    return {
+      success: true,
+      criteria: criteria,
+      message: `Generated acceptance criteria for ${issueKey}: ${summary}`
+    };
+    
+  } catch (error) {
+    console.error('generateCriteriaForRovo error:', error);
+    return {
+      success: false,
+      error: `Failed to generate criteria: ${error.message}`
+    };
+  }
+}

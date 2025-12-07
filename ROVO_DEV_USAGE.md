@@ -95,14 +95,22 @@ const response = await api.asApp().requestJira(route`/rest/api/3/issue/${issueKe
 - Cleaner component architecture
 - Proper Forge best practices
 
-## Screenshots
+## Key Learnings
 
-[Include 3-5 screenshots of Rovo Dev in action during development]
+1. **Rovo agents are accessed via chat, not programmatically** - This was a crucial insight that changed our architecture
+2. **Actions are called BY the agent** - Not the other way around
+3. **Forge resolver pattern** - Understanding how to structure backend functions
+4. **ADF format complexity** - Rovo Dev helped navigate Jira's document format
 
-## Social Media Post
+## Recommendation
 
-Posted on [LinkedIn/Twitter] on [Date]:
+Rovo Dev is essential for Forge development. It significantly reduces the learning curve and helps avoid common pitfalls. Highly recommended for all Codegeist participants.
 
-"Building my @Atlassian Codegeist submission with Rovo Dev! It helped me debug Jira API integration, generate error handling code, and write test cases. Saved me 40% development time! #Codegeist2025 #RovoDev #AtlassianForge"
+## Documentation
 
-Post URL: [INSERT URL HERE]
+For bonus eligibility:
+- ✅ Detailed usage examples provided above
+- ✅ Specific time savings documented
+- ✅ Code examples included
+- ⚠️ Screenshots: Take screenshots during next development session
+- ⚠️ Social media: Post after app is fully tested

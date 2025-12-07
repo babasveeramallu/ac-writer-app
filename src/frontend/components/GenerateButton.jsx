@@ -1,6 +1,5 @@
 import React, { memo } from 'react';
-import Button from '@forge/react/out/components/button';
-import Spinner from '@forge/react/out/components/spinner';
+import { Button, Spinner } from '@forge/react';
 
 const GenerateButton = memo(({ onClick, isLoading, disabled, template }) => {
   const handleKeyDown = (e) => {

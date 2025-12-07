@@ -15,19 +15,26 @@ const CriteriaDisplay = memo(({ criteria, onCopy, onApply, onRegenerate, editabl
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(editedCriteria);
-      setCopySuccess(true);
-      onCopy();
-      setTimeout(() => setCopySuccess(false), 2000);
-    } catch (err) {
       const textArea = document.createElement('textarea');
       textArea.value = editedCriteria;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-9999px';
       document.body.appendChild(textArea);
       textArea.select();
-      document.execCommand('copy');
+      
+      const successful = document.execCommand('copy');
       document.body.removeChild(textArea);
-      setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
+      
+      if (successful) {
+        setCopySuccess(true);
+        onCopy();
+        setTimeout(() => setCopySuccess(false), 2000);
+      } else {
+        throw new Error('Copy failed');
+      }
+    } catch (err) {
+      console.error('Copy failed:', err);
+      alert('Please manually select and copy the text');
     }
   };
 

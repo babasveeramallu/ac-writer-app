@@ -140,7 +140,11 @@ resolver.define('getIssueData', async (req) => {
 
 resolver.define('generateCriteria', async (req) => {
   try {
-    const { summary, description, issueType } = req.payload;
+    const { summary, description, issueType, template } = req.payload;
+    
+    if (template && template !== 'auto' && TEMPLATES[template]) {
+      return { success: true, criteria: TEMPLATES[template] };
+    }
     
     const validationErrors = validateInput(summary, description);
     if (validationErrors.length > 0) {
@@ -154,52 +158,58 @@ resolver.define('generateCriteria', async (req) => {
       };
     }
     
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => {
-        const error = new Error('Agent timeout');
-        error.code = ERROR_CODES.TIMEOUT;
-        reject(error);
-      }, 30000);
-    });
-    
-    const generatePromise = queueRequest(() => 
-      api.asApp().requestRovo('/agent/ac-generator-agent/invoke', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          input: `Issue: ${issueType}\nSummary: ${summary}\nDescription: ${description}\n\nGenerate concise Gherkin acceptance criteria with Given/When/Then format.`
-        })
-      })
-    );
-    
-    const response = await Promise.race([generatePromise, timeoutPromise]);
-    
-    if (!response.ok) {
-      const errorCode = response.status === 429 ? ERROR_CODES.QUOTA_EXCEEDED : ERROR_CODES.GENERATION_FAILED;
-      throw { status: response.status, code: errorCode };
-    }
-    
-    const result = await response.json();
-    const criteria = result.output || result.response;
-    
-    if (!criteria || criteria.trim().length === 0) {
-      throw { code: ERROR_CODES.GENERATION_FAILED, message: 'Empty response from agent' };
-    }
-    
+    const criteria = generateGherkinCriteria(summary, description, issueType);
     return { success: true, criteria };
+    
   } catch (error) {
     console.error('generateCriteria error:', error);
-    const errorCode = error.code || ERROR_CODES.GENERATION_FAILED;
     return {
       success: false,
       error: {
-        message: getErrorMessage(errorCode),
-        code: errorCode,
+        message: getErrorMessage(ERROR_CODES.GENERATION_FAILED),
+        code: ERROR_CODES.GENERATION_FAILED,
         details: error.message
       }
     };
   }
 });
+
+function generateGherkinCriteria(summary, description, issueType) {
+  const context = description ? `${summary} - ${description}` : summary;
+  const scenarios = [];
+  
+  scenarios.push(`**Scenario 1: Successful ${extractAction(summary)}**
+**Given** the user has necessary permissions
+**And** all required data is available
+**When** they perform the action
+**And** submit the request
+**Then** the operation should complete successfully
+**And** they should see a confirmation message`);
+  
+  scenarios.push(`**Scenario 2: Validation Error**
+**Given** the user attempts the operation
+**When** they provide invalid or missing data
+**Then** they should see a clear error message
+**And** be guided on how to correct the issue
+**And** no partial changes should be saved`);
+  
+  if (issueType === 'Bug') {
+    scenarios.push(`**Scenario 3: Bug Prevention**
+**Given** the conditions that caused the original bug
+**When** the user performs the same actions
+**Then** the bug should not occur
+**And** the system should handle the case gracefully`);
+  }
+  
+  return `## Acceptance Criteria\n\n${scenarios.join('\n\n')}`;
+}
+
+function extractAction(summary) {
+  const words = summary.toLowerCase().split(' ');
+  const actionWords = ['create', 'update', 'delete', 'login', 'register', 'search', 'view', 'edit', 'add', 'remove', 'modify'];
+  const action = words.find(w => actionWords.includes(w));
+  return action ? action.charAt(0).toUpperCase() + action.slice(1) : 'Operation';
+}
 
 resolver.define('updateDescription', async (req) => {
   try {

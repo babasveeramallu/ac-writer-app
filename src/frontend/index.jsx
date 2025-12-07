@@ -56,31 +56,20 @@ const App = () => {
     setSuccessMessage('');
     
     try {
-      let criteria;
+      const result = await dedupedRequest(`generate-${template}`, () =>
+        invoke('generateCriteria', {
+          summary: issueData.summary,
+          description: issueData.description,
+          issueType: issueData.issueType,
+          template: template
+        })
+      );
       
-      if (template === 'auto') {
-        const result = await dedupedRequest(`generate-${template}`, () =>
-          invoke('generateCriteria', {
-            summary: issueData.summary,
-            description: issueData.description,
-            issueType: issueData.issueType
-          })
-        );
-        
-        if (!result.success || result.error) {
-          throw new Error(result.error?.message || 'Failed to generate criteria');
-        }
-        
-        criteria = result.criteria;
-      } else {
-        criteria = templates[template];
+      if (!result.success || result.error) {
+        throw new Error(result.error?.message || 'Failed to generate criteria');
       }
       
-      if (!criteria) {
-        throw new Error('No criteria generated');
-      }
-      
-      setGeneratedCriteria(criteria);
+      setGeneratedCriteria(result.criteria);
       setSuccessMessage('Acceptance criteria generated successfully!');
     } catch (err) {
       console.error('Generate error:', err);
@@ -88,7 +77,7 @@ const App = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [issueData, templates, dedupedRequest]);
+  }, [issueData, dedupedRequest]);
 
   const handleCopy = useCallback(() => {
     setSuccessMessage('Copied to clipboard!');

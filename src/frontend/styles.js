@@ -3,7 +3,8 @@ export const styles = {
     padding: '16px',
     backgroundColor: '#FAFBFC',
     minHeight: '100vh',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif'
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
+    outline: 'none'
   },
   
   header: {
@@ -63,10 +64,11 @@ export const styles = {
     width: '100%',
     minHeight: '200px',
     padding: '8px',
-    border: '1px solid #DFE1E6',
+    border: '2px solid #DFE1E6',
     borderRadius: '3px',
     resize: 'vertical',
-    backgroundColor: '#F4F5F7'
+    backgroundColor: '#F4F5F7',
+    transition: 'border-color 0.2s'
   },
   
   emptyState: {
@@ -98,13 +100,15 @@ export const styles = {
   successMessage: {
     backgroundColor: '#E3FCEF',
     color: '#006644',
-    border: '1px solid #ABF5D1'
+    border: '2px solid #ABF5D1',
+    fontWeight: '500'
   },
   
   errorMessage: {
     backgroundColor: '#FFEBE6',
     color: '#BF2600',
-    border: '1px solid #FF8F73'
+    border: '2px solid #FF8F73',
+    fontWeight: '500'
   },
   
   spinner: {
@@ -124,12 +128,18 @@ export const inlineStyles = `
     box-sizing: border-box;
   }
   
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  
   button:hover {
     opacity: 0.9;
     transition: opacity 0.2s ease;
   }
   
-  button:focus {
+  button:focus,
+  button:focus-visible {
     outline: 2px solid #4C9AFF;
     outline-offset: 2px;
   }
@@ -149,6 +159,18 @@ export const inlineStyles = `
     outline: 2px solid #4C9AFF;
     outline-offset: 2px;
     border-color: #4C9AFF;
+  }
+  
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
   
   @media (max-width: 350px) {

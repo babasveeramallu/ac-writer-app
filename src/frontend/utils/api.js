@@ -1,24 +1,42 @@
 import { invoke } from '@forge/bridge';
+import { getCached, setCache } from './cache';
 
 let templateCache = null;
+const pendingRequests = new Map();
 
 export const fetchIssueData = async (issueKey) => {
-  try {
-    const result = await invoke('getIssueData', { issueKey });
-    
-    if (!result.success || result.error) {
-      return { 
-        success: false, 
-        data: null, 
-        error: result.error?.message || 'Failed to fetch issue data' 
-      };
-    }
-    
-    return { success: true, data: result, error: null };
-  } catch (error) {
-    console.error('fetchIssueData error:', error);
-    return { success: false, data: null, error: 'Failed to fetch issue data' };
+  const cacheKey = `issue-${issueKey}`;
+  const cached = getCached(cacheKey);
+  if (cached) return { success: true, data: cached, error: null };
+
+  if (pendingRequests.has(cacheKey)) {
+    return pendingRequests.get(cacheKey);
   }
+
+  const promise = (async () => {
+    try {
+      const result = await invoke('getIssueData', { issueKey });
+      
+      if (!result.success || result.error) {
+        return { 
+          success: false, 
+          data: null, 
+          error: result.error?.message || 'Failed to fetch issue data' 
+        };
+      }
+      
+      setCache(cacheKey, result);
+      return { success: true, data: result, error: null };
+    } catch (error) {
+      console.error('fetchIssueData error:', error);
+      return { success: false, data: null, error: 'Failed to fetch issue data' };
+    } finally {
+      pendingRequests.delete(cacheKey);
+    }
+  })();
+
+  pendingRequests.set(cacheKey, promise);
+  return promise;
 };
 
 export const generateAcceptanceCriteria = async (issueData, template) => {
@@ -96,27 +114,42 @@ export const copyToClipboard = async (text) => {
 };
 
 export const getAvailableTemplates = async () => {
-  try {
-    if (templateCache) {
-      return { success: true, data: templateCache, error: null };
-    }
-    
-    const result = await invoke('getTemplates');
-    
-    if (!result.success && result.error) {
-      return { success: false, data: null, error: result.error.message };
-    }
-    
-    const templates = Object.entries(result.templates || {}).map(([name, content]) => ({
-      name,
-      description: `${name} template`,
-      content
-    }));
-    
-    templateCache = templates;
-    return { success: true, data: templates, error: null };
-  } catch (error) {
-    console.error('getAvailableTemplates error:', error);
-    return { success: false, data: null, error: 'Failed to fetch templates' };
+  const cached = getCached('templates');
+  if (cached) return { success: true, data: cached, error: null };
+
+  if (pendingRequests.has('templates')) {
+    return pendingRequests.get('templates');
   }
+
+  const promise = (async () => {
+    try {
+      if (templateCache) {
+        return { success: true, data: templateCache, error: null };
+      }
+      
+      const result = await invoke('getTemplates');
+      
+      if (!result.success && result.error) {
+        return { success: false, data: null, error: result.error.message };
+      }
+      
+      const templates = Object.entries(result.templates || {}).map(([name, content]) => ({
+        name,
+        description: `${name} template`,
+        content
+      }));
+      
+      templateCache = templates;
+      setCache('templates', templates);
+      return { success: true, data: templates, error: null };
+    } catch (error) {
+      console.error('getAvailableTemplates error:', error);
+      return { success: false, data: null, error: 'Failed to fetch templates' };
+    } finally {
+      pendingRequests.delete('templates');
+    }
+  })();
+
+  pendingRequests.set('templates', promise);
+  return promise;
 };

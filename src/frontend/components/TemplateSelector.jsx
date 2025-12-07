@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { Select } from '@forge/react';
 
-const TemplateSelector = ({ value, onChange, templates }) => {
-  const options = [
+const TemplateSelector = memo(({ value, onChange, templates }) => {
+  const options = useMemo(() => [
     { label: 'Auto-detect', value: 'auto' },
     { label: 'Login/Authentication', value: 'Login/Authentication' },
     { label: 'CRUD Operations', value: 'CRUD Operations' },
@@ -10,7 +10,7 @@ const TemplateSelector = ({ value, onChange, templates }) => {
     { label: 'Search & Filter', value: 'Search & Filter' },
     { label: 'Form Validation', value: 'Form Validation' },
     ...Object.keys(templates || {}).map(key => ({ label: key, value: key }))
-  ];
+  ], [templates]);
 
   return (
     <Select
@@ -18,8 +18,10 @@ const TemplateSelector = ({ value, onChange, templates }) => {
       options={options}
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      aria-label="Select acceptance criteria template"
+      aria-describedby="template-help"
     />
   );
-};
+});
 
 export default TemplateSelector;

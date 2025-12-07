@@ -1,7 +1,8 @@
 import Resolver from '@forge/resolver';
 import api, { route, storage } from '@forge/api';
 import { ERROR_CODES, getErrorMessage, parseJiraError } from './constants/errors';
-import { retryWithBackoff, validateInput } from './utils/retry';
+import { retryWithBackoff, validateInput, queueRequest } from './utils/retry';
+import { getCached, setCache } from './utils/cache';
 
 const resolver = new Resolver();
 
@@ -97,8 +98,12 @@ resolver.define('getIssueData', async (req) => {
         }
       };
     }
+
+    const cacheKey = `issue-${issueKey}`;
+    const cached = getCached(cacheKey);
+    if (cached) return cached;
     
-    const response = await retryWithBackoff(async () => {
+    const response = await queueRequest(() => retryWithBackoff(async () => {
       const res = await api.asApp().requestJira(route`/rest/api/3/issue/${issueKey}`);
       if (!res.ok) {
         const error = new Error(`HTTP ${res.status}`);
@@ -106,16 +111,19 @@ resolver.define('getIssueData', async (req) => {
         throw error;
       }
       return res;
-    });
+    }));
     
     const data = await response.json();
-    return {
+    const result = {
       success: true,
       summary: data.fields.summary,
       description: data.fields.description?.content?.[0]?.content?.[0]?.text || '',
       issueType: data.fields.issuetype.name,
       projectKey: data.fields.project.key
     };
+    
+    setCache(cacheKey, result);
+    return result;
   } catch (error) {
     console.error('getIssueData error:', error);
     const errorCode = error.status ? parseJiraError(error.status) : ERROR_CODES.NETWORK_ERROR;
@@ -154,13 +162,15 @@ resolver.define('generateCriteria', async (req) => {
       }, 30000);
     });
     
-    const generatePromise = api.asApp().requestRovo('/agent/ac-generator-agent/invoke', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        input: `Issue Type: ${issueType}\nSummary: ${summary}\nDescription: ${description}\n\nGenerate Gherkin acceptance criteria.`
+    const generatePromise = queueRequest(() => 
+      api.asApp().requestRovo('/agent/ac-generator-agent/invoke', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input: `Issue: ${issueType}\nSummary: ${summary}\nDescription: ${description}\n\nGenerate concise Gherkin acceptance criteria with Given/When/Then format.`
+        })
       })
-    });
+    );
     
     const response = await Promise.race([generatePromise, timeoutPromise]);
     
@@ -265,8 +275,13 @@ resolver.define('updateDescription', async (req) => {
 
 resolver.define('getTemplates', async () => {
   try {
+    const cached = getCached('templates');
+    if (cached) return cached;
+
     const customTemplates = await storage.get('customTemplates') || {};
-    return { success: true, templates: { ...TEMPLATES, ...customTemplates } };
+    const result = { success: true, templates: { ...TEMPLATES, ...customTemplates } };
+    setCache('templates', result);
+    return result;
   } catch (error) {
     console.error('getTemplates error:', error);
     return { success: true, templates: TEMPLATES };

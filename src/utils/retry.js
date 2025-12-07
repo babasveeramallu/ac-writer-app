@@ -1,3 +1,8 @@
+const requestQueue = [];
+let isProcessing = false;
+const MAX_CONCURRENT = 2;
+let activeRequests = 0;
+
 export const retryWithBackoff = async (fn, maxRetries = 3, delay = 1000) => {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
@@ -16,6 +21,34 @@ export const retryWithBackoff = async (fn, maxRetries = 3, delay = 1000) => {
       console.log(`Retry attempt ${attempt}/${maxRetries} after ${backoffDelay}ms`);
       await new Promise(resolve => setTimeout(resolve, backoffDelay));
     }
+  }
+};
+
+export const queueRequest = async (fn) => {
+  return new Promise((resolve, reject) => {
+    requestQueue.push({ fn, resolve, reject });
+    processQueue();
+  });
+};
+
+const processQueue = async () => {
+  if (isProcessing || activeRequests >= MAX_CONCURRENT || requestQueue.length === 0) {
+    return;
+  }
+
+  isProcessing = true;
+  const { fn, resolve, reject } = requestQueue.shift();
+  activeRequests++;
+
+  try {
+    const result = await fn();
+    resolve(result);
+  } catch (error) {
+    reject(error);
+  } finally {
+    activeRequests--;
+    isProcessing = false;
+    processQueue();
   }
 };
 

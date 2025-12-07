@@ -17,10 +17,12 @@
     "@forge/bridge": "^3.5.0",
     "@forge/react": "^10.11.1",
     "@forge/resolver": "^1.7.1",
+    "@forge/ui": "^1.11.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@babel/preset-react": "^7.28.5",
     "@forge/cli": "^8.0.0",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^14.0.0",

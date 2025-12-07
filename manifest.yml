@@ -1,11 +1,13 @@
 app:
   runtime:
     name: nodejs20.x
+  id: ari:cloud:ecosystem::app/b6b2bb9c-f771-430d-a7f1-06faa6b834be
 
 modules:
   jira:issuePanel:
     - key: ac-writer-panel
       title: AC Writer
+      icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
       resource: main
       resolver:
         function: resolver
@@ -16,7 +18,7 @@ modules:
 
 resources:
   - key: main
-    path: src/frontend/index.jsx
+    path: src/frontend
 
 permissions:
   scopes:
